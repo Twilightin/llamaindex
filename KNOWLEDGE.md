@@ -3,6 +3,7 @@
 ## Decisions
 
 ## Runbooks
+- [How to add AI skills to VS Code](docs/runbooks/add-ai-skills-to-vscode.md)
 
 ## Patterns
 - [Incremental document ingestion with IngestionPipeline](docs/patterns/llamaindex-incremental-ingestion.md)
