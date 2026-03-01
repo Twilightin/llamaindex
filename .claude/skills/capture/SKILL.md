@@ -1,6 +1,6 @@
 ---
 name: capture
-description: "Saves valuable insights from the current conversation into structured .md files. Use this skill whenever the user says 'save this', 'capture this', 'save to knowledge base', '/capture', 'remember this', 'document this', 'write this down', or wants to preserve a useful answer, solution, pattern, or decision from the chat. Even if the user just says 'save' or 'keep this', trigger this skill. The skill classifies the content into one of 4 doc types (Decision, Runbook, Pattern, Lesson), applies the correct template, asks for confirmation, writes the file, and updates KNOWLEDGE.md at the project root."
+description: "Saves valuable insights from the current conversation into structured .md files. Use this skill whenever the user says 'save this', 'capture this', 'save to knowledge base', '/capture', 'remember this', 'document this', 'write this down', or wants to preserve a useful answer, solution, pattern, or decision from the chat. Even if the user just says 'save' or 'keep this', trigger this skill. Also trigger when the user encounters an unfamiliar shell command or bash syntax and wants to understand it. The skill classifies the content into one of 5 doc types (Decision, Runbook, Pattern, Lesson, Command), applies the correct template, asks for confirmation, writes the file, and updates KNOWLEDGE.md at the project root."
 allowed-tools: Read, Write, Edit, Bash
 ---
 
@@ -22,8 +22,9 @@ Pick the ONE type that best fits the content's primary purpose:
 | **Runbook** | Gives step-by-step instructions to set up or operate something | `docs/runbooks/` | `kebab-title.md` |
 | **Pattern** | Shows the correct/preferred way to write code for a recurring problem | `docs/patterns/` | `kebab-title.md` |
 | **Lesson** | Debugs an error, warns about a gotcha, identifies a root cause, says "don't do X" | `docs/lessons/` | `YYYY-MM-DD-kebab-title.md` |
+| **Command** | Explains a shell/bash command or flag the user doesn't recognise (e.g. `rm -rf`, `2>&1`, `head`) | `docs/commands/` | `kebab-command-name.md` |
 
-**Date prefix rule:** Decision and Lesson get today's date prefix (they are historical records). Runbook and Pattern do not (they are living references, updated in place).
+**Date prefix rule:** Decision and Lesson get today's date prefix (they are historical records). Runbook, Pattern, and Command do not (they are living reference material).
 
 If the content genuinely spans two types, pick the one that serves a future reader better. If you truly cannot classify it, ask the user.
 
@@ -125,6 +126,36 @@ good_example()
 One-line rule to remember going forward.
 ```
 
+### Command template
+```markdown
+# `command-name` — what it does in one line
+
+## Full command
+```bash
+the exact command as it appeared
+```
+
+## What it does
+Plain English explanation. No jargon.
+
+## Breaking it down
+
+| Part | Meaning |
+|------|---------|
+| `command` | the base program being run |
+| `-flag` | what this flag does |
+| `argument` | what this argument means |
+
+## Danger level
+- **Safe** — can be run freely / **Caution** — review before running / **Destructive** — cannot be undone
+
+## When to use it
+Typical scenario where this command is useful.
+
+## When NOT to use it
+Common mistake or situation where this command causes problems.
+```
+
 ## Step 4 — Show the user for confirmation
 
 Present the proposed output clearly before writing anything:
@@ -149,7 +180,7 @@ On approval:
 1. Create the target folder if it doesn't exist
 2. Write the `.md` file
 3. Update `KNOWLEDGE.md` at the **project root**:
-   - If `KNOWLEDGE.md` doesn't exist, create it with all 4 section headings
+   - If `KNOWLEDGE.md` doesn't exist, create it with all 5 section headings
    - Append exactly one line under the correct section heading
 
 ### KNOWLEDGE.md structure
@@ -167,6 +198,9 @@ On approval:
 
 ## Lessons
 - [Title](docs/lessons/YYYY-MM-DD-title.md)
+
+## Commands
+- [Title](docs/commands/title.md)
 ```
 
 Confirm to the user: "Saved to `<path>` and added to `KNOWLEDGE.md`."
