@@ -1,124 +1,143 @@
 ---
 name: git-commit
-description: 'Execute git commit with conventional commit message analysis, intelligent staging, and message generation. Use when user asks to commit changes, create a git commit, or mentions "/commit". Supports: (1) Auto-detecting type and scope from changes, (2) Generating conventional commit messages from diff, (3) Interactive commit with optional type/scope/description overrides, (4) Intelligent file staging for logical grouping'
+description: 'コミットの作成・メッセージ生成を行うスキル。「コミットして」「/commit」などの指示に対応。(1) 変更内容からタイプ・スコープを自動判定、(2) diffを解析してコンベンショナルコミットメッセージを生成、(3) タイプ・スコープ・説明のカスタマイズ対応、(4) 論理的なファイルグループ化によるステージング'
 license: MIT
 allowed-tools: Bash
 ---
 
-# Git Commit with Conventional Commits
+# コンベンショナルコミットによるGitコミット
 
-## Overview
+## 概要
 
-Create standardized, semantic git commits using the Conventional Commits specification. Analyze the actual diff to determine appropriate type, scope, and message.
+コンベンショナルコミット仕様に基づき、標準化・意味論的なgitコミットを作成する。
+実際のdiffを解析してタイプ・スコープ・メッセージを決定する。
 
-## Conventional Commit Format
-
-```
-<type>[optional scope]: <description>
-
-[optional body]
-
-[optional footer(s)]
-```
-
-## Commit Types
-
-| Type       | Purpose                        |
-| ---------- | ------------------------------ |
-| `feat`     | New feature                    |
-| `fix`      | Bug fix                        |
-| `docs`     | Documentation only             |
-| `style`    | Formatting/style (no logic)    |
-| `refactor` | Code refactor (no feature/fix) |
-| `perf`     | Performance improvement        |
-| `test`     | Add/update tests               |
-| `build`    | Build system/dependencies      |
-| `ci`       | CI/config changes              |
-| `chore`    | Maintenance/misc               |
-| `revert`   | Revert commit                  |
-
-## Breaking Changes
+## コミットメッセージの形式
 
 ```
-# Exclamation mark after type/scope
-feat!: remove deprecated endpoint
+<タイプ>[任意のスコープ]: <説明>
 
-# BREAKING CHANGE footer
-feat: allow config to extend other configs
+[任意の本文]
 
-BREAKING CHANGE: `extends` key behavior changed
+[任意のフッター]
 ```
 
-## Workflow
+## コミットタイプ一覧
 
-### 1. Analyze Diff
+| タイプ       | 用途                              |
+| ----------- | --------------------------------- |
+| `feat`      | 新機能の追加                        |
+| `fix`       | バグ修正                           |
+| `docs`      | ドキュメントのみの変更               |
+| `style`     | フォーマット・スタイル変更（ロジック変更なし） |
+| `refactor`  | リファクタリング（機能追加・バグ修正なし） |
+| `perf`      | パフォーマンス改善                   |
+| `test`      | テストの追加・修正                   |
+| `build`     | ビルドシステム・依存関係の変更         |
+| `ci`        | CI設定の変更                       |
+| `chore`     | その他のメンテナンス作業              |
+| `revert`    | コミットの取り消し                   |
+
+## 破壊的変更（Breaking Changes）
+
+```
+# タイプ/スコープの後に「!」を付ける
+feat!: 廃止エンドポイントを削除
+
+# BREAKING CHANGEフッターを使用
+feat: 設定ファイルの継承に対応
+
+BREAKING CHANGE: `extends`キーの動作が変更されました
+```
+
+## ワークフロー
+
+### 1. diffの解析
 
 ```bash
-# If files are staged, use staged diff
+# ステージング済みファイルがある場合
 git diff --staged
 
-# If nothing staged, use working tree diff
+# ステージングなしの場合
 git diff
 
-# Also check status
+# ステータス確認
 git status --porcelain
 ```
 
-### 2. Stage Files (if needed)
-
-If nothing is staged or you want to group changes differently:
+### 2. ファイルのステージング（必要な場合）
 
 ```bash
-# Stage specific files
+# 特定ファイルをステージング
 git add path/to/file1 path/to/file2
 
-# Stage by pattern
+# パターン指定
 git add *.test.*
 git add src/components/*
 
-# Interactive staging
+# 対話的ステージング
 git add -p
 ```
 
-**Never commit secrets** (.env, credentials.json, private keys).
+**シークレット情報（.env、認証情報、秘密鍵）は絶対にコミットしない。**
 
-### 3. Generate Commit Message
+### 3. コミットメッセージの生成
 
-Analyze the diff to determine:
+#### メッセージの対象読者
 
-- **Type**: What kind of change is this?
-- **Scope**: What area/module is affected?
-- **Description**: One-line summary of what changed (present tense, imperative mood, <72 chars)
+コミットメッセージは**技術的な背景が少ないプロジェクトマネージャー（PM）が確認する**ことを想定して書く。
+以下の方針でバランスの取れた更新ログを作成すること。
 
-### 4. Execute Commit
+**機能・ロジックの変更がある場合（関数・処理レベルの変化）：**
+- 何の機能が変わったかを平易な言葉で説明する
+- どの処理・機能が追加・変更・削除されたかを箇条書きで明記する
+- 技術用語は使いすぎず、影響範囲がわかるように書く
+- 例：「ユーザーログイン処理にメールアドレス検証を追加」「検索機能の速度を改善（結果取得を約2倍高速化）」
+
+**変更が軽微な場合（設定・スタイル・ドキュメントのみ）：**
+- 簡潔に1〜2行でまとめる（過度な詳細は不要）
+- 例：「設定ファイルのフォーマットを整理」「READMEの手順を更新」
+
+**共通ルール：**
+- 何が変わったか（what）と、なぜ変えたか（why）を意識して書く
+- 「〜を修正」「〜を追加」「〜を改善」など動詞で始める
+- PMが「この変更は何に影響するか」を判断できる粒度にする
+
+#### 技術的な分析項目
+
+- **タイプ**: この変更の種類は何か？
+- **スコープ**: 影響を受けるモジュール・機能領域はどこか？
+- **説明**: 変更内容の1行サマリー（現在形・命令形、72文字以内）
+
+### 4. コミットの実行
 
 ```bash
-# Single line
-git commit -m "<type>[scope]: <description>"
+# 1行の場合
+git commit -m "<タイプ>[スコープ]: <説明>"
 
-# Multi-line with body/footer
+# 本文・フッターを含む場合
 git commit -m "$(cat <<'EOF'
-<type>[scope]: <description>
+<タイプ>[スコープ]: <説明>
 
-<optional body>
+<任意の本文>
 
-<optional footer>
+<任意のフッター>
 EOF
 )"
 ```
 
-## Best Practices
+## ベストプラクティス
 
-- One logical change per commit
-- Present tense: "add" not "added"
-- Imperative mood: "fix bug" not "fixes bug"
-- Reference issues: `Closes #123`, `Refs #456`
-- Keep description under 72 characters
+- 1コミット = 1つの論理的な変更
+- 現在形で書く：「追加する」「修正する」（「追加した」はNG）
+- 命令形・体言止め：「バグを修正する」（「バグが修正されました」はNG）
+- issueの参照：`Closes #123`、`Refs #456`
+- 説明文は72文字以内に収める
 
-## Git Safety Protocol
+## Gitセーフティプロトコル
 
-- NEVER update git config
-- NEVER run destructive commands (--force, hard reset) without explicit request
-- NEVER skip hooks (--no-verify) unless user asks
-- NEVER force push to main/master
-- If commit fails due to hooks, fix and create NEW commit (don't amend)
+- git configの変更は絶対に行わない
+- 明示的な指示なしに破壊的コマンド（--force、hard reset）を実行しない
+- ユーザーの指示なしにhooksをスキップ（--no-verify）しない
+- main/masterへのforce pushは絶対に行わない
+- hookによりコミット失敗した場合は修正後に新規コミットを作成（amendしない）
