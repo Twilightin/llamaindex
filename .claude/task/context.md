@@ -25,13 +25,13 @@
 - [x] Python 3.12 virtualenv set up at `backend/venv/`
 - [x] Core packages installed: `llama-index`, `openai`, `python-dotenv`
 - [x] `backend/sample.py` — basic in-memory RAG demo running successfully
-- [ ] No persistent vector store yet
+- [x] Persistent vector store (ChromaDB) set up at backend/storage/
 - [ ] No document loader for real files yet
 - [ ] No API server (FastAPI/Flask) yet
 
 ## Active Plans
 
-_No active plans yet. Sub-agents will add links here when plans are created._
+- ChromaDB persistent vector store implemented — see `backend/sample.py`
 
 ---
 
@@ -40,3 +40,4 @@ _No active plans yet. Sub-agents will add links here when plans are created._
 | Date | Agent | Action | Plan File |
 |------|-------|--------|-----------|
 | — | — | Initial context created | — |
+| 2026-03-01 | main | Implemented ChromaDB persistent vector store | Plan in conversation |

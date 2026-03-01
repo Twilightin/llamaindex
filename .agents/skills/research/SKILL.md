@@ -1,11 +1,11 @@
 ---
-name: plan
+name: research
 description: "Research and create an implementation plan for a LlamaIndex feature BEFORE writing any code. Invokes the llamaindex-researcher sub-agent to investigate the topic, produce a detailed plan file, and report back. Use this before starting any new feature or when unsure of the best LlamaIndex pattern to use."
 disable-model-invocation: false
 allowed-tools: Read, Write, Agent
 ---
 
-# Plan — Research First, Code Second
+# Research — Research First, Code Second
 
 You have been asked to research and plan the following:
 

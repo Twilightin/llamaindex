@@ -24,14 +24,14 @@ The biggest mistake people make with sub-agents is treating them as "workers who
 
 ## The Workflow in Practice
 
-### Before Writing Any Code — Use `/plan`
+### Before Writing Any Code — Use `/research`
 
 ```
-You: /plan add persistent ChromaDB vector store
+You: /research add persistent ChromaDB vector store
 ```
 
 What happens behind the scenes:
-1. The `/plan` skill reads `.claude/task/context.md` (current project state)
+1. The `/research` skill reads `.claude/task/context.md` (current project state)
 2. It launches `llamaindex-researcher` as a sub-agent
 3. The researcher searches the latest LlamaIndex docs, checks the codebase, writes a detailed plan to `.claude/task/chroma_plan.md`, and updates `context.md`
 4. The researcher returns a short 3-sentence summary to the main agent
@@ -65,7 +65,7 @@ You: "add ChromaDB persistent storage"
 → Claude tries to figure it out on the fly, may use wrong API, misses edge cases
 
 ✅ Correct:
-You: "/plan add ChromaDB persistent storage"
+You: "/research add ChromaDB persistent storage"
 → researcher finds the exact packages, import paths, and gotchas
 → you review the plan
 You: "go"
@@ -80,7 +80,7 @@ You: "what's the best way to load PDFs?"
 → Claude answers from training data, which may be outdated (LlamaIndex API changed a lot)
 
 ✅ Correct:
-You: "/plan load and index PDF files"
+You: "/research load and index PDF files"
 → researcher fetches the CURRENT docs, finds the right loader for LlamaIndex 0.10+
 → plan includes exact pip install commands and working code snippets
 ```
@@ -118,9 +118,9 @@ This ensures the next sub-agent you launch has accurate context and doesn't re-r
 
 ---
 
-## When to Use `/plan` vs. Just Asking Claude
+## When to Use `/research` vs. Just Asking Claude
 
-| Situation | Use `/plan`? |
+| Situation | Use `/research`? |
 |-----------|-------------|
 | New feature you haven't built before | ✅ Yes |
 | Unsure which LlamaIndex class/API to use | ✅ Yes |
@@ -129,7 +129,7 @@ This ensures the next sub-agent you launch has accurate context and doesn't re-r
 | Renaming a variable | ❌ No |
 | Updating a config value | ❌ No |
 
-Rule of thumb: **if you'd Google it first, use `/plan` instead.**
+Rule of thumb: **if you'd Google it first, use `/research` instead.**
 
 ---
 
@@ -137,7 +137,7 @@ Rule of thumb: **if you'd Google it first, use `/plan` instead.**
 
 ```bash
 # Research and plan a new feature (always start here)
-/plan <feature description>
+/research <feature description>
 
 # After reviewing the plan, implement it
 "looks good, go ahead"
@@ -164,7 +164,7 @@ Rule of thumb: **if you'd Google it first, use `/plan` instead.**
 │   ├── llamaindex-researcher.md  ← Research + plan only, no code
 │   └── code-reviewer.md          ← Reviews code after implementation
 └── skills/
-    └── plan/                     ← /plan command
+    └── research/                 ← /research command
 
 backend/
 ├── sample.py                   ← Main code (only main Claude edits this)
