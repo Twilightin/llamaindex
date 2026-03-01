@@ -26,5 +26,9 @@ __pycache__/
 backend/storage/
 storage/
 
+# Document data (user files — not committed)
+backend/data/*
+!backend/data/.gitkeep
+
 # OS
 .DS_Store

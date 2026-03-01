@@ -1,9 +1,12 @@
 """
 LlamaIndex + OpenAI sample — RAG with persistent ChromaDB vector store
+and file-based document loading with incremental ingestion.
 
 Usage:
     source backend/venv/bin/activate
     python backend/sample.py
+
+Drop files into backend/data/ (PDF, TXT, MD, DOCX) before running.
 """
 
 from pathlib import Path
@@ -11,53 +14,93 @@ from pathlib import Path
 import chromadb
 from dotenv import load_dotenv
 from llama_index.core import (
-    Document,
     Settings,
+    SimpleDirectoryReader,
     StorageContext,
     VectorStoreIndex,
-    load_index_from_storage,
 )
+from llama_index.core.ingestion import IngestionPipeline
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.storage.docstore import SimpleDocumentStore
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.llms.openai import OpenAI
 from llama_index.vector_stores.chroma import ChromaVectorStore
 
 load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")
 
-STORAGE_DIR = Path(__file__).parent / "storage"
-CHROMA_DIR = STORAGE_DIR / "chroma"
+STORAGE_DIR     = Path(__file__).parent / "storage"
+CHROMA_DIR      = STORAGE_DIR / "chroma"
+DATA_DIR        = Path(__file__).parent / "data"
+PIPELINE_DIR    = STORAGE_DIR / "pipeline"
+COLLECTION_NAME = "llamaindex_docs"
+CHUNK_SIZE      = 512
+CHUNK_OVERLAP   = 64
 
 
-def get_documents() -> list[Document]:
-    return [
-        Document(text="LlamaIndex is a data framework for LLM applications."),
-        Document(text="It supports RAG, agents, and structured data extraction."),
-        Document(text="You can load PDFs, web pages, databases, and more."),
-    ]
+def load_documents() -> list:
+    """Load all supported files from backend/data/ using SimpleDirectoryReader.
+
+    filename_as_id=True gives each document a stable doc_id based on its
+    file path — required for incremental ingestion deduplication.
+    Supported: .pdf, .txt, .md, .docx
+    """
+    reader = SimpleDirectoryReader(
+        input_dir=str(DATA_DIR),
+        recursive=True,
+        filename_as_id=True,
+        required_exts=[".pdf", ".txt", ".md", ".docx"],
+    )
+    return reader.load_data()
+
+
+def ingest_documents(vector_store: ChromaVectorStore) -> VectorStoreIndex:
+    """Ingest documents from backend/data/ into ChromaDB.
+
+    On first run: processes and embeds every file.
+    On subsequent runs: skips files whose content hash has not changed,
+    re-embeds only modified or new files.
+    """
+    if Settings.embed_model is None:
+        raise RuntimeError("Settings.embed_model must be set before calling ingest_documents()")
+
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    PIPELINE_DIR.mkdir(parents=True, exist_ok=True)
+
+    pipeline = IngestionPipeline(
+        transformations=[
+            SentenceSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP),
+            Settings.embed_model,
+        ],
+        vector_store=vector_store,
+        docstore=SimpleDocumentStore(),
+    )
+
+    try:
+        pipeline.load(PIPELINE_DIR)
+        print("Loaded existing pipeline cache from storage.")
+    except (FileNotFoundError, ValueError):
+        print("No existing pipeline cache found — starting fresh.")
+
+    documents = load_documents()
+    if not documents:
+        print(f"Warning: No documents found in {DATA_DIR}. Add files and re-run.")
+    else:
+        print(f"Processing {len(documents)} document(s) from {DATA_DIR} ...")
+        pipeline.run(documents=documents, show_progress=True)
+        pipeline.persist(PIPELINE_DIR)
+        print("Pipeline state persisted.")
+
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    return VectorStoreIndex.from_vector_store(
+        vector_store, storage_context=storage_context
+    )
 
 
 def get_or_create_index() -> VectorStoreIndex:
     chroma_client = chromadb.PersistentClient(path=str(CHROMA_DIR))
-    chroma_collection = chroma_client.get_or_create_collection("llamaindex_docs")
+    chroma_collection = chroma_client.get_or_create_collection(COLLECTION_NAME)
     vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
-
-    index_store_path = STORAGE_DIR / "index_store.json"
-
-    if index_store_path.exists():
-        print("Loading existing index from storage...")
-        storage_context = StorageContext.from_defaults(
-            vector_store=vector_store,
-            persist_dir=str(STORAGE_DIR),
-        )
-        return load_index_from_storage(storage_context)
-    else:
-        print("Creating new index and persisting to storage...")
-        STORAGE_DIR.mkdir(parents=True, exist_ok=True)
-        storage_context = StorageContext.from_defaults(vector_store=vector_store)
-        index = VectorStoreIndex.from_documents(
-            get_documents(), storage_context=storage_context
-        )
-        storage_context.persist(persist_dir=str(STORAGE_DIR))
-        return index
+    return ingest_documents(vector_store)
 
 
 def main() -> None:

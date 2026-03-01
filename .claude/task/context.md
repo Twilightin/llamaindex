@@ -26,12 +26,14 @@
 - [x] Core packages installed: `llama-index`, `openai`, `python-dotenv`
 - [x] `backend/sample.py` — basic in-memory RAG demo running successfully
 - [x] Persistent vector store (ChromaDB) set up at backend/storage/
-- [ ] No document loader for real files yet
+- [x] Document loader — drop files into backend/data/ (PDF, TXT, MD, DOCX supported)
+- [x] Incremental ingestion via IngestionPipeline (skips unchanged files on re-run)
 - [ ] No API server (FastAPI/Flask) yet
 
 ## Active Plans
 
 - ChromaDB persistent vector store implemented — see `backend/sample.py`
+- Document loader with incremental ingestion — see `.claude/task/document_loader_plan.md`
 
 ---
 
@@ -41,3 +43,5 @@
 |------|-------|--------|-----------|
 | — | — | Initial context created | — |
 | 2026-03-01 | main | Implemented ChromaDB persistent vector store | Plan in conversation |
+| 2026-03-01 | llamaindex-researcher | Researched SimpleDirectoryReader, IngestionPipeline incremental ingestion, PDF/DOCX packages | `.claude/task/document_loader_plan.md` |
+| 2026-03-01 | main | Implemented document loader + incremental ingestion — tested and working | `.claude/task/document_loader_plan.md` |
